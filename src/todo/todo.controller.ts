@@ -7,13 +7,17 @@ import {
   Put,
   Param,
   Delete,
+  UseGuards,
 } from '@nestjs/common';
+
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 // Import the TodoService which provides methods to interact with the database.
 import { TodoService } from './todo.service';
 
 // The @Controller() decorator declares that this class is a controller and specifies the route path for all its routes.
 @Controller('todos')
+@UseGuards(JwtAuthGuard)
 export class TodoController {
   // The constructor injects the TodoService, which provides methods to interact with the database.
   constructor(private readonly todoService: TodoService) {}
