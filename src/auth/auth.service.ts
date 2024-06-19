@@ -1,7 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
 
 import { UsersService } from '../users/users.service';
+import { SignupDto } from './dto/signup.dto';
+import { LoginDto } from './dto/login.dto';
 
 @Injectable()
 export class AuthService {
@@ -10,21 +13,44 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async validateUser(username: string, pass: string): Promise<any> {
-    const user = await this.usersService.findOne(username);
-
-    /**
-     * Of course in a real application, you wouldn't store a password in plain text. You'd instead use a library like bcrypt, with a salted one-way hash algorithm. With that approach, you'd only store hashed passwords, and then compare the stored password to a hashed version of the incoming password, thus never storing or exposing user passwords in plain text. To keep our sample app simple, we violate that absolute mandate and use plain text. Don't do this in your real app!
-     */
-    if (user && user.password === pass) {
-      const { password, ...result } = user;
-      return result;
+  async validateUser(username: string, password: string): Promise<any> {
+    const user = await this.usersService.findOneByName(username);
+    if (user) {
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      return isPasswordValid;
     }
-    return null;
+    return false;
   }
 
-  async login(user: any) {
-    const payload = { username: user.username, sub: user.userId };
+  async signup(signupDto: SignupDto) {
+    const user = await this.usersService.create(
+      signupDto.username,
+      signupDto.password,
+    );
+    const payload = { username: user.username, sub: user.id };
+    return {
+      access_token: this.jwtService.sign(payload),
+    };
+  }
+
+  async login(loginDto: LoginDto) {
+    const user = await this.usersService.findOneByName(loginDto.username);
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+      loginDto.password,
+      user.password,
+    );
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const payload = { username: user.username, sub: user.id };
+
     return {
       access_token: this.jwtService.sign(payload),
     };

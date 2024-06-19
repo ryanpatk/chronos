@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { TodoModule } from './todo/todo.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { UrlScraperModule } from './url-scraper/url-scraper.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -29,6 +30,7 @@ import { AppController } from './app.controller';
     TodoModule,
     AuthModule,
     UsersModule,
+    UrlScraperModule,
   ],
   controllers: [AppController],
 })
