@@ -27,7 +27,7 @@ export class AuthService {
       signupDto.username,
       signupDto.password,
     );
-    const payload = { username: user.username, sub: user.id };
+    const payload = { username: user.username, id: user.id };
     return {
       access_token: this.jwtService.sign(payload),
     };
@@ -49,7 +49,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const payload = { username: user.username, sub: user.id };
+    const payload = { username: user.username, id: user.id };
 
     return {
       access_token: this.jwtService.sign(payload),

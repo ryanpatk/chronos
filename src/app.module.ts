@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { UrlScraperModule } from './url-scraper/url-scraper.module';
 import { AppController } from './app.controller';
+import { SpacesModule } from './spaces/spaces.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { AppController } from './app.controller';
     AuthModule,
     UsersModule,
     UrlScraperModule,
+    SpacesModule,
   ],
   controllers: [AppController],
 })

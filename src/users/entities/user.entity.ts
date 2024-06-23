@@ -13,9 +13,12 @@ export class User {
   id: number;
 
   @Column({ unique: true })
-  @IsEmail()
   @IsNotEmpty()
-  email: string;
+  username: string;
+
+  // @Column({ unique: true })
+  // @IsEmail()
+  // email: string;
 
   @Column()
   @IsNotEmpty()
