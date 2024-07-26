@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { getLinkPreview } from 'link-preview-js';
-import urlMetadata from 'url-metadata';
+import urlMetadata = require('url-metadata');
 import { LinkPreviewResult } from './url-scraper.types';
 
 function ensureHttp(url: string): string {
@@ -20,26 +20,41 @@ export class UrlScraperService {
   async scrapeUrl(url: string): Promise<LinkPreviewResult> {
     const secureUrl = ensureHttp(url);
 
-    for (const userAgent of this.userAgents) {
-      try {
+    let resultWithFavicons: LinkPreviewResult | null = null;
+
+    try {
+      for (const userAgent of this.userAgents) {
         const result = await this.tryLinkPreview(secureUrl, userAgent);
-        if (this.isValidResult(result)) {
+
+        if (this.resultHasImages(result)) {
           return result;
         }
 
-        // If link-preview-js didn't find images, try url-metadata
-        if (result.images.length === 0) {
-          const fallbackResult = await this.tryUrlMetadata(secureUrl);
-          if (this.isValidResult(fallbackResult)) {
-            return fallbackResult;
-          }
+        if (this.resultHasFavicons(result) && !Boolean(resultWithFavicons)) {
+          resultWithFavicons = result;
         }
-      } catch (error) {
-        console.error(
-          `Scraping failed with user agent ${userAgent}:`,
-          error.message,
-        );
       }
+
+      // If link-preview-js didn't find images, try url-metadata
+      const fallbackResult = await this.tryUrlMetadata(secureUrl);
+
+      if (this.resultHasImages(fallbackResult)) {
+        return fallbackResult;
+      }
+
+      if (
+        this.resultHasFavicons(fallbackResult) &&
+        !Boolean(resultWithFavicons)
+      ) {
+        resultWithFavicons = fallbackResult;
+      }
+
+      // only resort to result with favicons after all image results fail
+      if (Boolean(resultWithFavicons)) {
+        return resultWithFavicons;
+      }
+    } catch (error) {
+      console.error(`Scraping ${secureUrl} failed:`, error.message);
     }
 
     throw new Error('Failed to scrape URL metadata with all methods');
@@ -79,7 +94,11 @@ export class UrlScraperService {
     };
   }
 
-  private isValidResult(result: LinkPreviewResult): boolean {
-    return !!(result.images.length > 0);
+  private resultHasImages(result: LinkPreviewResult): boolean {
+    return Boolean(result.images.length > 0);
+  }
+
+  private resultHasFavicons(result: LinkPreviewResult): boolean {
+    return Boolean(result.favicons.length > 0);
   }
 }
